@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PCC Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#C8962A;--gold-light:#F0C553;--gold-pale:#FDF6E3;
+  --navy:#0D1B3E;--navy-mid:#1A2F5F;
+  --cream:#F5F5F0;--white:#fff;--text:#1C1C1C;--muted:#666;
+  --green:#1a7a3c;--green-bg:#e8f7ee;
+  --red:#b91c1c;--red-bg:#fef2f2;
+  --orange:#c2570a;--orange-bg:#fff7ed;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);overflow-x:hidden;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;padding:24px;}
+.login-box{background:var(--navy-mid);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center;border:1px solid rgba(200,150,42,.3);}
+.login-logo{width:70px;height:70px;margin:0 auto 18px;}
+.login-box h2{font-family:'Playfair Display',serif;color:var(--gold-light);font-size:20px;margin-bottom:4px;}
+.login-box p{color:#8898b0;font-size:13px;margin-bottom:24px;}
+.login-box input{width:100%;padding:13px 16px;border-radius:10px;border:1.5px solid rgba(200,150,42,.3);background:rgba(255,255,255,.06);color:var(--white);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:14px;}
+.login-box input::placeholder{letter-spacing:0;color:#5a6a84;}
+.login-box input:focus{border-color:var(--gold);}
+.login-btn{width:100%;background:var(--gold);color:var(--navy);font-weight:700;font-size:15px;padding:14px;border-radius:10px;border:none;cursor:pointer;}
+.login-err{color:#f87171;font-size:13px;margin-top:10px;display:none;}
+
+/* TOP NAV */
+#app{display:none;}
+.topbar{background:var(--navy);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-title{font-family:'Playfair Display',serif;color:var(--gold-light);font-size:15px;}
+.topbar-title span{display:block;font-size:10px;color:#8898b0;font-family:'DM Sans',sans-serif;font-weight:400;}
+.logout-btn{background:rgba(200,150,42,.15);border:1px solid rgba(200,150,42,.3);color:var(--gold-light);font-size:12px;padding:7px 14px;border-radius:8px;cursor:pointer;border:none;}
+
+/* TABS */
+.tabs{display:flex;background:var(--white);border-bottom:2px solid #eee;overflow-x:auto;}
+.tab{flex:1;min-width:80px;padding:13px 6px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold);}
+
+/* CONTENT */
+.page{display:none;padding:16px;}
+.page.active{display:block;}
+
+/* DASHBOARD STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--white);border-radius:14px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:4px solid var(--gold);}
+.stat-card.green{border-left-color:#22c55e;}
+.stat-card.red{border-left-color:#ef4444;}
+.stat-card.orange{border-left-color:#f97316;}
+.stat-num{font-family:'Playfair Display',serif;font-size:26px;color:var(--navy);}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* SECTION HEADER */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);}
+.add-btn{background:var(--gold);color:var(--navy);font-weight:600;font-size:13px;padding:9px 16px;border-radius:9px;border:none;cursor:pointer;}
+
+/* STUDENT CARDS */
+.student-card{background:var(--white);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.sc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.sc-avatar{width:44px;height:44px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--gold-light);flex-shrink:0;}
+.sc-name{font-weight:600;font-size:15px;color:var(--navy);}
+.sc-meta{font-size:12px;color:var(--muted);}
+.sc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.pill{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;}
+.pill-blue{background:#dbeafe;color:#1d4ed8;}
+.pill-green{background:var(--green-bg);color:var(--green);}
+.pill-red{background:var(--red-bg);color:var(--red);}
+.pill-orange{background:var(--orange-bg);color:var(--orange);}
+.sc-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.sc-info-item{font-size:12px;}
+.sc-info-item .lbl{color:var(--muted);}
+.sc-info-item .val{font-weight:500;color:var(--text);margin-top:2px;}
+.sc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.sc-btn{font-size:12px;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;}
+.btn-wa{background:#25D366;color:#fff;}
+.btn-edit{background:var(--gold-pale);color:var(--navy);border:1px solid var(--gold);}
+.btn-delete{background:var(--red-bg);color:var(--red);}
+.btn-att{background:#dbeafe;color:#1d4ed8;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 36px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:18px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;}
+.form-group input,.form-group select{width:100%;padding:11px 14px;border-radius:9px;border:1.5px solid #e0e0e0;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--white);}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.save-btn{flex:1;background:var(--gold);color:var(--navy);font-weight:700;font-size:14px;padding:13px;border-radius:10px;border:none;cursor:pointer;}
+.cancel-btn{background:#f0f0f0;color:var(--muted);font-weight:500;font-size:14px;padding:13px 20px;border-radius:10px;border:none;cursor:pointer;}
+
+/* ATTENDANCE PAGE */
+.att-date-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.att-date-row input{flex:1;padding:10px 14px;border-radius:9px;border:1.5px solid #e0e0e0;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
+.att-date-row input:focus{border-color:var(--gold);}
+.att-card{background:var(--white);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.att-avatar{width:38px;height:38px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--gold-light);flex-shrink:0;}
+.att-name{flex:1;}
+.att-name .name{font-size:14px;font-weight:500;color:var(--navy);}
+.att-name .sub{font-size:12px;color:var(--muted);}
+.att-toggle{display:flex;gap:6px;}
+.att-btn{font-size:12px;padding:7px 12px;border-radius:7px;border:none;cursor:pointer;font-weight:500;}
+.att-present{background:var(--green-bg);color:var(--green);}
+.att-absent{background:var(--red-bg);color:var(--red);}
+.att-btn.selected-present{background:var(--green);color:#fff;}
+.att-btn.selected-absent{background:var(--red);color:#fff;}
+.save-att-btn{width:100%;background:var(--navy);color:var(--gold-light);font-weight:700;font-size:14px;padding:14px;border-radius:12px;border:none;cursor:pointer;margin-top:14px;}
+
+/* FEE PAGE */
+.fee-filter{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;}
+.fee-filter-btn{font-size:12px;padding:7px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:var(--white);cursor:pointer;white-space:nowrap;font-weight:500;}
+.fee-filter-btn.active{background:var(--navy);color:var(--gold-light);border-color:var(--navy);}
+.fee-card{background:var(--white);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.fee-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.fee-name{font-weight:600;font-size:14px;color:var(--navy);}
+.fee-sub{font-size:12px;color:var(--muted);}
+.fee-amount{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);}
+.fee-bar-wrap{background:#f0f0f0;border-radius:10px;height:6px;margin-bottom:8px;}
+.fee-bar{height:6px;border-radius:10px;background:var(--green);}
+.fee-bar.partial{background:var(--orange);}
+.fee-bar.none{background:var(--red);}
+.fee-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
+.fee-actions{display:flex;gap:8px;margin-top:10px;}
+
+/* WHATSAPP BLAST */
+.wa-card{background:var(--white);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.wa-card h4{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:10px;}
+.wa-template{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;font-size:13px;color:#166534;line-height:1.6;margin-bottom:12px;}
+.wa-send-btn{width:100%;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px;border-radius:10px;border:none;cursor:pointer;}
+.wa-student-list{margin-bottom:14px;}
+.wa-student-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5;}
+.wa-student-row:last-child{border:none;}
+.wa-student-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--navy);flex-shrink:0;}
+.wa-student-row .ws-name{font-size:14px;font-weight:500;flex:1;}
+.wa-student-row .ws-ph{font-size:12px;color:var(--muted);}
+
+/* SEARCH */
+.search-box{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e0e0e0;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px;}
+.search-box:focus{border-color:var(--gold);}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty .icon{font-size:40px;margin-bottom:10px;}
+.empty p{font-size:14px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--gold-light);font-size:13px;padding:12px 22px;border-radius:30px;z-index:999;display:none;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <svg class="login-logo" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="38" fill="#0D1B3E" stroke="#C8962A" stroke-width="2.5"/>
+      <polygon points="40,12 52,30 70,30 56,42 62,60 40,50 18,60 24,42 10,30 28,30" fill="none" stroke="#C8962A" stroke-width="2"/>
+      <circle cx="40" cy="40" r="8" fill="#C8962A"/>
+      <text x="40" y="75" text-anchor="middle" font-family="serif" font-size="8" fill="#C8962A" font-weight="700">PCC</text>
+    </svg>
+    <h2>Admin Login</h2>
+    <p>Parikh Commerce Classes</p>
+    <input type="password" id="pwInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">🔐 Login</button>
+    <div class="login-err" id="loginErr">❌ Wrong password. Try again.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">PCC Admin<span>Parikh Commerce Classes</span></div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('dashboard',this)">📊 Dashboard</div>
+    <div class="tab" onclick="showPage('students',this)">👥 Students</div>
+    <div class="tab" onclick="showPage('attendance',this)">✅ Attendance</div>
+    <div class="tab" onclick="showPage('fees',this)">💰 Fees</div>
+    <div class="tab" onclick="showPage('whatsapp',this)">💬 WhatsApp</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <br>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num" id="ds-total">0</div><div class="stat-lbl">Total Students</div></div>
+      <div class="stat-card green"><div class="stat-num" id="ds-present">0</div><div class="stat-lbl">Present Today</div></div>
+      <div class="stat-card red"><div class="stat-num" id="ds-absent">0</div><div class="stat-lbl">Absent Today</div></div>
+      <div class="stat-card orange"><div class="stat-num" id="ds-fee-due">0</div><div class="stat-lbl">Fee Pending</div></div>
+    </div>
+
+    <div class="sec-title" style="margin-bottom:12px;">📋 Absent Today</div>
+    <div id="ds-absent-list"></div>
+
+    <div class="sec-title" style="margin:16px 0 12px;">💸 Fee Defaulters</div>
+    <div id="ds-fee-list"></div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="page" id="page-students">
+    <br>
+    <div class="sec-header">
+      <div class="sec-title">Students</div>
+      <button class="add-btn" onclick="openAddStudent()">+ Add</button>
+    </div>
+    <input class="search-box" placeholder="🔍 Search student..." oninput="renderStudents(this.value)"/>
+    <div id="studentList"></div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="page" id="page-attendance">
+    <br>
+    <div class="sec-title" style="margin-bottom:12px;">Mark Attendance</div>
+    <div class="att-date-row">
+      <input type="date" id="attDate"/>
+      <select id="attSubject" style="padding:10px 12px;border-radius:9px;border:1.5px solid #e0e0e0;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+        <option value="all">All</option>
+        <option value="Accountancy">Accountancy</option>
+        <option value="Statistics">Statistics</option>
+      </select>
+    </div>
+    <div id="attList"></div>
+    <button class="save-att-btn" onclick="saveAttendance()">💾 Save Attendance</button>
+  </div>
+
+  <!-- FEES -->
+  <div class="page" id="page-fees">
+    <br>
+    <div class="sec-header">
+      <div class="sec-title">Fee Tracking</div>
+    </div>
+    <div class="fee-filter">
+      <button class="fee-filter-btn active" onclick="filterFees('all',this)">All</button>
+      <button class="fee-filter-btn" onclick="filterFees('paid',this)">Paid</button>
+      <button class="fee-filter-btn" onclick="filterFees('partial',this)">Partial</button>
+      <button class="fee-filter-btn" onclick="filterFees('pending',this)">Pending</button>
+    </div>
+    <div id="feeList"></div>
+  </div>
+
+  <!-- WHATSAPP -->
+  <div class="page" id="page-whatsapp">
+    <br>
+    <div class="sec-title" style="margin-bottom:14px;">WhatsApp Messages</div>
+
+    <!-- Absent Alert -->
+    <div class="wa-card">
+      <h4>📢 Absent Alert</h4>
+      <div class="wa-template" id="wa-absent-preview">Select absent students below to preview message...</div>
+      <div class="wa-student-list" id="wa-absent-list"></div>
+      <button class="wa-send-btn" onclick="sendAbsentWA()">📤 Send Absent Alerts</button>
+    </div>
+
+    <!-- Fee Reminder -->
+    <div class="wa-card">
+      <h4>💸 Fee Reminder</h4>
+      <div class="wa-template" id="wa-fee-preview">Select students below to preview message...</div>
+      <div class="wa-student-list" id="wa-fee-list"></div>
+      <button class="wa-send-btn" style="background:var(--navy);" onclick="sendFeeWA()">📤 Send Fee Reminders</button>
+    </div>
+
+    <!-- Custom Message -->
+    <div class="wa-card">
+      <h4>✍️ Custom Message</h4>
+      <textarea id="customMsg" style="width:100%;min-height:90px;padding:12px;border-radius:9px;border:1.5px solid #e0e0e0;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;margin-bottom:10px;" placeholder="Type your custom message here..."></textarea>
+      <div class="wa-student-list" id="wa-custom-list"></div>
+      <button class="wa-send-btn" style="background:var(--gold);color:var(--navy);" onclick="sendCustomWA()">📤 Send Custom Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT STUDENT MODAL -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal">
+    <h3 id="modalTitle">Add Student</h3>
+    <div class="form-row">
+      <div class="form-group"><label>First Name</label><input id="f-fname" placeholder="Ravi"/></div>
+      <div class="form-group"><label>Last Name</label><input id="f-lname" placeholder="Patel"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Class</label>
+        <select id="f-class"><option>11th</option><option>12th</option></select>
+      </div>
+      <div class="form-group"><label>Subject</label>
+        <select id="f-subject"><option>Accountancy</option><option>Statistics</option><option>Both</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Phone (Parent/Student)</label><input id="f-phone" placeholder="9999999999" type="tel"/></div>
+    <div class="form-group"><label>Total Fees (₹)</label><input id="f-total" placeholder="8000" type="number"/></div>
+    <div class="form-group"><label>Fees Paid (₹)</label><input id="f-paid" placeholder="0" type="number"/></div>
+    <div class="form-group"><label>Admission Date</label><input id="f-date" type="date"/></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="save-btn" onclick="saveStudent()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEE UPDATE MODAL -->
+<div class="modal-overlay" id="feeModal">
+  <div class="modal">
+    <h3>Update Fee Payment</h3>
+    <div class="form-group"><label>Student</label><input id="fm-name" disabled style="background:#f5f5f5;"/></div>
+    <div class="form-group"><label>Total Fees (₹)</label><input id="fm-total" type="number"/></div>
+    <div class="form-group"><label>Amount Paid (₹)</label><input id="fm-paid" type="number"/></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeFeeModal()">Cancel</button>
+      <button class="save-btn" onclick="saveFeeUpdate()">💾 Update</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+const PASS = 'ankur1234';
+let students = JSON.parse(localStorage.getItem('pcc_students')||'[]');
+let attendance = JSON.parse(localStorage.getItem('pcc_attendance')||'{}');
+let editId = null;
+let feeEditId = null;
+
+// ── LOGIN ──
+function doLogin(){
+  const v = document.getElementById('pwInput').value;
+  if(v === PASS){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+function logout(){
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('pwInput').value='';
+  document.getElementById('loginErr').style.display='none';
+}
+
+// ── TABS ──
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='students') renderStudents();
+  if(id==='attendance') renderAttendance();
+  if(id==='fees') renderFees();
+  if(id==='whatsapp') renderWA();
+}
+
+// ── INIT ──
+function initApp(){
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('attDate').value = today;
+  document.getElementById('attDate').addEventListener('change', renderAttendance);
+  document.getElementById('attSubject').addEventListener('change', renderAttendance);
+  renderDashboard();
+  renderStudents();
+  renderAttendance();
+  renderFees();
+  renderWA();
+}
+
+// ── SAVE ──
+function save(){
+  localStorage.setItem('pcc_students', JSON.stringify(students));
+  localStorage.setItem('pcc_attendance', JSON.stringify(attendance));
+}
+
+// ── TOAST ──
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+// ── INITIALS ──
+function initials(s){ return s.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const today = new Date().toISOString().split('T')[0];
+  const todayAtt = attendance[today] || {};
+  const absent = students.filter(s=>todayAtt[s.id]==='absent');
+  const present = students.filter(s=>todayAtt[s.id]==='present');
+  const feeDue = students.filter(s=>(s.total||0)>(s.paid||0));
+
+  document.getElementById('ds-total').textContent = students.length;
+  document.getElementById('ds-present').textContent = present.length;
+  document.getElementById('ds-absent').textContent = absent.length;
+  document.getElementById('ds-fee-due').textContent = feeDue.length;
+
+  const absList = document.getElementById('ds-absent-list');
+  if(!absent.length){ absList.innerHTML='<div class="empty"><div class="icon">✅</div><p>No absences today!</p></div>'; }
+  else {
+    absList.innerHTML = absent.map(s=>`
+      <div class="att-card">
+        <div class="att-avatar">${initials(s.name)}</div>
+        <div class="att-name"><div class="name">${s.name}</div><div class="sub">${s.class} · ${s.subject}</div></div>
+        <a href="https://wa.me/91${s.phone}?text=${encodeURIComponent(absentMsg(s,today))}" target="_blank">
+          <button class="sc-btn btn-wa">📲 Notify</button>
+        </a>
+      </div>`).join('');
+  }
+
+  const feeList = document.getElementById('ds-fee-list');
+  if(!feeDue.length){ feeList.innerHTML='<div class="empty"><div class="icon">💚</div><p>All fees cleared!</p></div>'; }
+  else {
+    feeList.innerHTML = feeDue.map(s=>{
+      const due = (s.total||0)-(s.paid||0);
+      return `<div class="fee-card">
+        <div class="fee-top">
+          <div><div class="fee-name">${s.name}</div><div class="fee-sub">${s.class} · ${s.subject}</div></div>
+          <div class="fee-amount">₹${due.toLocaleString()} due</div>
+        </div>
+        <a href="https://wa.me/91${s.phone}?text=${encodeURIComponent(feeMsg(s))}" target="_blank">
+          <button class="sc-btn btn-wa" style="font-size:12px;">💬 Fee Reminder</button>
+        </a>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── STUDENTS ──
+function renderStudents(q=''){
+  const list = document.getElementById('studentList');
+  const filtered = students.filter(s=>s.name.toLowerCase().includes(q.toLowerCase())||s.phone.includes(q));
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><div class="icon">👥</div><p>No students found. Tap + Add to begin.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(s=>{
+    const paid = s.paid||0; const total = s.total||0;
+    const pct = total ? Math.min(100,Math.round(paid/total*100)) : 0;
+    const status = paid>=total?'paid':paid>0?'partial':'pending';
+    const pill = status==='paid'?'pill-green':status==='partial'?'pill-orange':'pill-red';
+    const label = status==='paid'?'Paid':status==='partial'?'Partial':'Pending';
+    return `<div class="student-card">
+      <div class="sc-top">
+        <div class="sc-avatar">${initials(s.name)}</div>
+        <div><div class="sc-name">${s.name}</div><div class="sc-meta">${s.class} · ${s.subject}</div></div>
+        <div class="sc-badges"><span class="pill ${pill}">${label}</span></div>
+      </div>
+      <div class="sc-info">
+        <div class="sc-info-item"><div class="lbl">Phone</div><div class="val">${s.phone}</div></div>
+        <div class="sc-info-item"><div class="lbl">Admitted</div><div class="val">${s.date||'—'}</div></div>
+        <div class="sc-info-item"><div class="lbl">Total Fee</div><div class="val">₹${total.toLocaleString()}</div></div>
+        <div class="sc-info-item"><div class="lbl">Paid</div><div class="val">₹${paid.toLocaleString()}</div></div>
+      </div>
+      <div class="sc-actions">
+        <a href="https://wa.me/91${s.phone}" target="_blank"><button class="sc-btn btn-wa">💬 WhatsApp</button></a>
+        <button class="sc-btn btn-att" onclick="markQuickAtt('${s.id}')">✅ Mark Att.</button>
+        <button class="sc-btn btn-edit" onclick="openEditStudent('${s.id}')">✏️ Edit</button>
+        <button class="sc-btn btn-delete" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddStudent(){
+  editId=null;
+  document.getElementById('modalTitle').textContent='Add Student';
+  ['fname','lname','phone','total','paid'].forEach(f=>document.getElementById('f-'+f).value='');
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('studentModal').classList.add('open');
+}
+function openEditStudent(id){
+  const s=students.find(x=>x.id===id); if(!s) return;
+  editId=id;
+  document.getElementById('modalTitle').textContent='Edit Student';
+  const parts=s.name.split(' ');
+  document.getElementById('f-fname').value=parts[0]||'';
+  document.getElementById('f-lname').value=parts.slice(1).join(' ')||'';
+  document.getElementById('f-class').value=s.class;
+  document.getElementById('f-subject').value=s.subject;
+  document.getElementById('f-phone').value=s.phone;
+  document.getElementById('f-total').value=s.total||0;
+  document.getElementById('f-paid').value=s.paid||0;
+  document.getElementById('f-date').value=s.date||'';
+  document.getElementById('studentModal').classList.add('open');
+}
+function closeModal(){ document.getElementById('studentModal').classList.remove('open'); }
+function saveStudent(){
+  const fname=document.getElementById('f-fname').value.trim();
+  const lname=document.getElementById('f-lname').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  if(!fname||!phone){ toast('❌ Name and phone required'); return; }
+  const s={
+    id: editId||Date.now().toString(),
+    name:(fname+' '+lname).trim(),
+    class:document.getElementById('f-class').value,
+    subject:document.getElementById('f-subject').value,
+    phone:phone,
+    total:parseFloat(document.getElementById('f-total').value)||0,
+    paid:parseFloat(document.getElementById('f-paid').value)||0,
+    date:document.getElementById('f-date').value
+  };
+  if(editId){ const i=students.findIndex(x=>x.id===editId); students[i]=s; }
+  else students.push(s);
+  save(); closeModal(); renderStudents(); renderDashboard(); renderFees(); renderWA();
+  toast(editId?'✅ Student updated!':'✅ Student added!');
+}
+function deleteStudent(id){
+  if(!confirm('Delete this student?')) return;
+  students=students.filter(s=>s.id!==id);
+  save(); renderStudents(); renderDashboard(); renderFees(); renderWA();
+  toast('🗑 Student deleted');
+}
+function markQuickAtt(id){
+  const today=new Date().toISOString().split('T')[0];
+  if(!attendance[today]) attendance[today]={};
+  attendance[today][id]='present';
+  save(); toast('✅ Marked present today!'); renderDashboard();
+}
+
+// ── ATTENDANCE ──
+let tempAtt={};
+function renderAttendance(){
+  const date=document.getElementById('attDate').value;
+  const subj=document.getElementById('attSubject').value;
+  const saved=attendance[date]||{};
+  tempAtt={...saved};
+  const filtered=subj==='all'?students:students.filter(s=>s.subject===subj||s.subject==='Both');
+  const list=document.getElementById('attList');
+  if(!filtered.length){ list.innerHTML='<div class="empty"><div class="icon">👥</div><p>No students for this filter.</p></div>'; return; }
+  list.innerHTML=filtered.map(s=>{
+    const st=tempAtt[s.id]||'';
+    return `<div class="att-card" id="attcard-${s.id}">
+      <div class="att-avatar">${initials(s.name)}</div>
+      <div class="att-name"><div class="name">${s.name}</div><div class="sub">${s.class} · ${s.subject}</div></div>
+      <div class="att-toggle">
+        <button class="att-btn att-present ${st==='present'?'selected-present':''}" onclick="toggleAtt('${s.id}','present')">P</button>
+        <button class="att-btn att-absent ${st==='absent'?'selected-absent':''}" onclick="toggleAtt('${s.id}','absent')">A</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleAtt(id,status){
+  tempAtt[id]=status;
+  const card=document.getElementById('attcard-'+id);
+  card.querySelector('.att-present').className='att-btn att-present'+(status==='present'?' selected-present':'');
+  card.querySelector('.att-absent').className='att-btn att-absent'+(status==='absent'?' selected-absent':'');
+}
+function saveAttendance(){
+  const date=document.getElementById('attDate').value;
+  if(!attendance[date]) attendance[date]={};
+  Object.assign(attendance[date],tempAtt);
+  save(); toast('✅ Attendance saved!'); renderDashboard();
+}
+
+// ── FEES ──
+let feeFilter='all';
+function filterFees(f,el){
+  feeFilter=f;
+  document.querySelectorAll('.fee-filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderFees();
+}
+function renderFees(){
+  const list=document.getElementById('feeList');
+  let filtered=students;
+  if(feeFilter==='paid') filtered=students.filter(s=>(s.paid||0)>=(s.total||0)&&(s.total||0)>0);
+  if(feeFilter==='partial') filtered=students.filter(s=>(s.paid||0)>0&&(s.paid||0)<(s.total||0));
+  if(feeFilter==='pending') filtered=students.filter(s=>(s.paid||0)===0);
+  if(!filtered.length){ list.innerHTML='<div class="empty"><div class="icon">💰</div><p>No students in this category.</p></div>'; return; }
+  list.innerHTML=filtered.map(s=>{
+    const paid=s.paid||0,total=s.total||0,due=total-paid;
+    const pct=total?Math.min(100,Math.round(paid/total*100)):0;
+    const barClass=pct>=100?'':'pct'+'>='+'50'?'partial':'none';
+    const bc=pct>=100?'':pct>=50?'partial':'none';
+    return `<div class="fee-card">
+      <div class="fee-top">
+        <div><div class="fee-name">${s.name}</div><div class="fee-sub">${s.class} · ${s.subject}</div></div>
+        <div class="fee-amount">₹${total.toLocaleString()}</div>
+      </div>
+      <div class="fee-bar-wrap"><div class="fee-bar ${bc}" style="width:${pct}%"></div></div>
+      <div class="fee-meta"><span>Paid: ₹${paid.toLocaleString()}</span><span>Due: ₹${due>0?due.toLocaleString():0}</span><span>${pct}%</span></div>
+      <div class="fee-actions">
+        <button class="sc-btn btn-edit" onclick="openFeeEdit('${s.id}')">✏️ Update Fee</button>
+        ${due>0?`<a href="https://wa.me/91${s.phone}?text=${encodeURIComponent(feeMsg(s))}" target="_blank"><button class="sc-btn btn-wa">💬 Remind</button></a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function openFeeEdit(id){
+  const s=students.find(x=>x.id===id); if(!s) return;
+  feeEditId=id;
+  document.getElementById('fm-name').value=s.name;
+  document.getElementById('fm-total').value=s.total||0;
+  document.getElementById('fm-paid').value=s.paid||0;
+  document.getElementById('feeModal').classList.add('open');
+}
+function closeFeeModal(){ document.getElementById('feeModal').classList.remove('open'); }
+function saveFeeUpdate(){
+  const s=students.find(x=>x.id===feeEditId); if(!s) return;
+  s.total=parseFloat(document.getElementById('fm-total').value)||0;
+  s.paid=parseFloat(document.getElementById('fm-paid').value)||0;
+  save(); closeFeeModal(); renderFees(); renderDashboard();
+  toast('✅ Fee updated!');
+}
+
+// ── WHATSAPP MESSAGES ──
+function absentMsg(s,date){
+  return `🙏 Dear Parent,\n\nThis is to inform you that *${s.name}* was *absent* in today's class (${date}) at Parikh Commerce Classes.\n\nRegular attendance is important for board exam preparation. Please ensure your child attends the next class.\n\nThank you,\n*Ankur Parikh Sir*\nParikh Commerce Classes, Nadiad\n📞 9426656133`;
+}
+function feeMsg(s){
+  const due=(s.total||0)-(s.paid||0);
+  return `🙏 Dear Parent,\n\nKindly note that a fee of *₹${due.toLocaleString()}* is pending for *${s.name}* (${s.class} · ${s.subject}) at Parikh Commerce Classes.\n\nPlease arrange payment at your earliest convenience.\n\nUPI ID: *ankurjalpa24@okicici*\n\nThank you,\n*Ankur Parikh Sir*\n📞 9426656133`;
+}
+
+function renderWA(){
+  // Absent list (today)
+  const today=new Date().toISOString().split('T')[0];
+  const todayAtt=attendance[today]||{};
+  const absentStudents=students.filter(s=>todayAtt[s.id]==='absent');
+  const dueStudents=students.filter(s=>(s.total||0)>(s.paid||0));
+
+  document.getElementById('wa-absent-list').innerHTML=absentStudents.length?absentStudents.map(s=>`
+    <div class="wa-student-row">
+      <input type="checkbox" id="wa-abs-${s.id}" checked/>
+      <div class="ws-name">${s.name}</div>
+      <div class="ws-ph">${s.phone}</div>
+    </div>`).join(''):'<p style="font-size:13px;color:var(--muted);padding:8px 0;">No absent students today.</p>';
+
+  document.getElementById('wa-fee-list').innerHTML=dueStudents.length?dueStudents.map(s=>`
+    <div class="wa-student-row">
+      <input type="checkbox" id="wa-fee-${s.id}" checked/>
+      <div class="ws-name">${s.name}</div>
+      <div class="ws-ph">${s.phone}</div>
+    </div>`).join(''):'<p style="font-size:13px;color:var(--muted);padding:8px 0;">No pending fees.</p>';
+
+  document.getElementById('wa-custom-list').innerHTML=students.length?students.map(s=>`
+    <div class="wa-student-row">
+      <input type="checkbox" id="wa-cust-${s.id}"/>
+      <div class="ws-name">${s.name}</div>
+      <div class="ws-ph">${s.phone}</div>
+    </div>`).join(''):'<p style="font-size:13px;color:var(--muted);">No students added yet.</p>';
+
+  if(absentStudents.length){
+    document.getElementById('wa-absent-preview').textContent=absentMsg(absentStudents[0],today);
+  }
+  if(dueStudents.length){
+    document.getElementById('wa-fee-preview').textContent=feeMsg(dueStudents[0]);
+  }
+}
+
+function sendAbsentWA(){
+  const today=new Date().toISOString().split('T')[0];
+  const todayAtt=attendance[today]||{};
+  students.filter(s=>todayAtt[s.id]==='absent').forEach(s=>{
+    const cb=document.getElementById('wa-abs-'+s.id);
+    if(cb&&cb.checked) window.open('https://wa.me/91'+s.phone+'?text='+encodeURIComponent(absentMsg(s,today)),'_blank');
+  });
+  toast('📤 Sending absent alerts...');
+}
+function sendFeeWA(){
+  students.filter(s=>(s.total||0)>(s.paid||0)).forEach(s=>{
+    const cb=document.getElementById('wa-fee-'+s.id);
+    if(cb&&cb.checked) window.open('https://wa.me/91'+s.phone+'?text='+encodeURIComponent(feeMsg(s)),'_blank');
+  });
+  toast('📤 Sending fee reminders...');
+}
+function sendCustomWA(){
+  const msg=document.getElementById('customMsg').value.trim();
+  if(!msg){ toast('❌ Please type a message first'); return; }
+  students.forEach(s=>{
+    const cb=document.getElementById('wa-cust-'+s.id);
+    if(cb&&cb.checked) window.open('https://wa.me/91'+s.phone+'?text='+encodeURIComponent(msg),'_blank');
+  });
+  toast('📤 Sending messages...');
+}
+</script>
+</body>
+</html>
